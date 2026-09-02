@@ -7,7 +7,7 @@
     <title>ChemOasis | Your Personal Chemistry Professor</title>
 
     <meta name="description"
-          content="ChemOasis is a chemistry learning and teaching platform...">
+          content="ChemOasis is a chemistry learning and teaching platform for students and instructors.">
 
     <style>
         body {
@@ -24,6 +24,9 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
         .logo {
@@ -32,23 +35,36 @@
         }
 
         nav {
-    display: flex;
-    gap: 24px;
-}
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
 
-nav a {
-    color: #1f2937;
-    text-decoration: none;
-    font-weight: 600;
-}
+        nav a {
+            color: #1f2937;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
 
-nav a:hover {
-    color: #2563eb;
-}
+        nav a:hover,
+        nav a.active {
+            color: #2563eb;
+        }
+
+        .page-section {
+            display: none;
+            min-height: 62vh;
+        }
+
+        .page-section.active {
+            display: block;
+        }
 
         .hero {
             text-align: center;
-            padding: 100px 20px;
+            padding: 90px 20px;
         }
 
         .hero h1 {
@@ -57,15 +73,15 @@ nav a:hover {
         }
 
         .hero h2 {
-            font-size: 28px;
+            font-size: 30px;
             font-weight: normal;
         }
 
         .hero p {
             font-size: 19px;
-            max-width: 750px;
+            max-width: 780px;
             margin: 25px auto;
-            line-height: 1.6;
+            line-height: 1.7;
         }
 
         .button {
@@ -81,11 +97,15 @@ nav a:hover {
         }
 
         .features {
-            display: flex;
             justify-content: center;
             gap: 25px;
             flex-wrap: wrap;
-            padding: 40px 8% 80px;
+            padding: 70px 8%;
+            text-align: center;
+        }
+
+        .features.active {
+            display: flex;
         }
 
         .feature {
@@ -96,21 +116,42 @@ nav a:hover {
             box-shadow: 0 3px 12px rgba(0,0,0,0.08);
         }
 
+        .founder-photo {
+            width: 180px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 4px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
         footer {
             text-align: center;
             padding: 35px;
             background: #111827;
             color: white;
         }
-        .founder-photo {
-    width: 180px;
-    height: 180px;
-    object-fit: cover;
-    border-radius: 50%;
-    margin-bottom: 20px;
-    border: 4px solid white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
+
+        footer p {
+            margin: 12px 0;
+        }
+
+        @media (max-width: 900px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            nav {
+                justify-content: center;
+                gap: 15px;
+            }
+
+            .hero h1 {
+                font-size: 38px;
+            }
+        }
     </style>
 </head>
 
@@ -120,28 +161,29 @@ nav a:hover {
     <div class="logo">🧪 ChemOasis</div>
 
     <nav>
-        <a href="#home">Home</a>
-        <a href="#features">Features</a>
-        <a href="#students">Students</a>
-        <a href="#instructors">Instructors</a>
-        <a href="#about">About</a>
-        <a href="#contact">Contact</a>
+        <a href="#home" data-section="home">Home</a>
+        <a href="#features" data-section="features">Features</a>
+        <a href="#students" data-section="students">Students</a>
+        <a href="#instructors" data-section="instructors">Instructors</a>
+        <a href="#about" data-section="about">About</a>
+        <a href="#contact" data-section="contact">Contact</a>
         <a href="https://chemoasis.streamlit.app/" target="_blank">Sign In</a>
     </nav>
 </header>
 
-<section id="home" class="hero">
+
+<section id="home" class="page-section hero">
 
     <h1>Where Chemistry Becomes Easier to Learn</h1>
 
     <h2>Your Personal Chemistry Professor</h2>
 
     <p>
-    ChemOasis helps students understand chemistry through clear explanations,
-    guided practice, quizzes, worksheets, exam preparation, and personalized
-    learning support. It also helps instructors create high-quality chemistry
-    teaching materials efficiently.
-</p>
+        ChemOasis helps students understand chemistry through clear explanations,
+        guided practice, quizzes, worksheets, exam preparation, and personalized
+        learning support. It also helps instructors create high-quality chemistry
+        teaching materials efficiently.
+    </p>
 
     <a class="button"
        href="https://chemoasis.streamlit.app/"
@@ -151,7 +193,8 @@ nav a:hover {
 
 </section>
 
-<section id="features" class="features">
+
+<section id="features" class="page-section features">
 
     <div class="feature">
         <h3>⚗️ Learn Concepts</h3>
@@ -174,7 +217,9 @@ nav a:hover {
     </div>
 
 </section>
-<section id="students" class="hero">
+
+
+<section id="students" class="page-section hero">
 
     <h2>For Students</h2>
 
@@ -193,7 +238,8 @@ nav a:hover {
 
 </section>
 
-    <section id="instructors" class="hero">
+
+<section id="instructors" class="page-section hero">
 
     <h2>For Instructors</h2>
 
@@ -207,26 +253,42 @@ nav a:hover {
     <a class="button"
        href="https://chemoasis.streamlit.app/"
        target="_blank">
-        Create Teaching Materials
+       Create Teaching Materials
     </a>
 
-</section><section id="about" class="hero">
+</section>
+
+
+<section id="about" class="page-section hero active">
 
     <img src="Passport Horizontal 630x810.jpg"
          alt="Manoj K. Manna, Ph.D., Founder & Chief Executive Officer, ChemOasis"
          class="founder-photo">
 
     <h2>About ChemOasis</h2>
+
     <p><strong>Founded September 1, 2026</strong></p>
+
     <p>
-    <strong>Mission:</strong> Make science easier to understand, accessible to learn, and exciting to explore.
-</p>
-<p>
-    <strong>Vision:</strong> Build a lasting learning environment where students, regardless of background or location, can find excellent teaching, practice, mentorship, and scientific curiosity.
-</p>
+        <strong>Mission:</strong>
+        Make science easier to understand, accessible to learn,
+        and exciting to explore.
+    </p>
+
     <p>
-    <strong>Long-Term Aspiration:</strong> Establish a permanent educational presence in the United States that combines digital learning with physical spaces for science education, experimentation, mentorship, and community engagement.
-</p>
+        <strong>Vision:</strong>
+        Build a lasting learning environment where students,
+        regardless of background or location, can find excellent teaching,
+        practice, mentorship, and scientific curiosity.
+    </p>
+
+    <p>
+        <strong>Long-Term Aspiration:</strong>
+        Establish a permanent educational presence in the United States
+        that combines digital learning with physical spaces for science
+        education, experimentation, mentorship, and community engagement.
+    </p>
+
     <p>
         ChemOasis was founded by Manoj K. Manna, Ph.D., a chemistry
         educator and researcher with experience in chemistry teaching
@@ -234,14 +296,17 @@ nav a:hover {
     </p>
 
     <p>
-    ChemOasis combines chemistry education with intelligent learning technology
-    to help students understand chemistry and help instructors create
-    high-quality educational materials.
-</p>
+        ChemOasis combines chemistry education with intelligent learning
+        technology to help students understand chemistry and help instructors
+        create high-quality educational materials.
+    </p>
 
 </section>
-<section id="contact">
-    <h2>Contact</h2>
+
+
+<section id="contact" class="page-section hero">
+
+    <h2>Contact ChemOasis</h2>
 
     <p>
         For questions, collaborations, educational partnerships,
@@ -252,15 +317,101 @@ nav a:hover {
         <strong>Manoj K. Manna, Ph.D.</strong><br>
         Founder & Chief Executive Officer, ChemOasis
     </p>
+
 </section>
-    <footer>
-   
+
+
+<footer>
+
     <p><strong>Manoj K. Manna, Ph.D.</strong></p>
     <p><strong>Founder & Chief Executive Officer, ChemOasis</strong></p>
     <p><strong>Founded in the United States</strong></p>
     <p><strong>Huntington, West Virginia 25755, USA</strong></p>
+
 </footer>
-</footer>
+
+
+<script>
+    const sectionLinks = document.querySelectorAll('nav a[data-section]');
+    const sections = document.querySelectorAll('.page-section');
+
+    function showSection(sectionId) {
+
+        sections.forEach(section => {
+            section.classList.remove('active');
+        });
+
+        sectionLinks.forEach(link => {
+            link.classList.remove('active');
+        });
+
+        const targetSection = document.getElementById(sectionId);
+
+        if (targetSection) {
+            targetSection.classList.add('active');
+        }
+
+        const activeLink =
+            document.querySelector(`nav a[data-section="${sectionId}"]`);
+
+        if (activeLink) {
+            activeLink.classList.add('active');
+        }
+
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+
+
+    sectionLinks.forEach(link => {
+
+        link.addEventListener('click', function(event) {
+
+            event.preventDefault();
+
+            const sectionId =
+                this.getAttribute('data-section');
+
+            history.pushState(
+                null,
+                '',
+                '#' + sectionId
+            );
+
+            showSection(sectionId);
+        });
+
+    });
+
+
+    function loadStartingSection() {
+
+        const requestedSection =
+            window.location.hash.replace('#', '');
+
+        if (
+            requestedSection &&
+            document.getElementById(requestedSection)
+        ) {
+            showSection(requestedSection);
+        } else {
+            showSection('about');
+
+            history.replaceState(
+                null,
+                '',
+                '#about'
+            );
+        }
+    }
+
+
+    window.addEventListener('popstate', loadStartingSection);
+
+    loadStartingSection();
+</script>
 
 </body>
 </html>
