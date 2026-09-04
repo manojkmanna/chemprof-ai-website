@@ -1,1502 +1,549 @@
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-import streamlit as st
-from openai import OpenAI
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-import requests
-import smtplib
-from email.message import EmailMessage
-import firebase_admin
-from firebase_admin import credentials, firestore
+    <title>ChemOasis | Your Personal Chemistry Professor</title>
 
-# Load API key
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-FIREBASE_API_KEY = st.secrets["FIREBASE_API_KEY"]
-LAB_VECTOR_STORE_ID = st.secrets["LAB_VECTOR_STORE_ID"]
-# Firebase Admin / Firestore
-if not firebase_admin._apps:
-    cred = credentials.Certificate(
-        dict(st.secrets["firebase_service_account"])
-    )
-    firebase_admin.initialize_app(cred)
+    <meta name="description"
+          content="ChemOasis is a chemistry learning and teaching platform for students and instructors.">
 
-db = firestore.client()
-def firebase_signup(email, password):
-    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_API_KEY}"
-
-    payload = {
-        "email": email,
-        "password": password,
-        "returnSecureToken": True
-    }
-
-    response = requests.post(url, json=payload)
-    return response.json()
-def firebase_signin(email, password):
-    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
-
-    payload = {
-        "email": email,
-        "password": password,
-        "returnSecureToken": True
-    }
-
-    response = requests.post(url, json=payload)
-    return response.json()
-
-def send_login_notification(user_email, login_method):
-    try:
-        msg = EmailMessage()
-
-        msg["Subject"] = "New ChemOasis Login"
-        msg["From"] = st.secrets["NOTIFICATION_EMAIL"]
-        msg["To"] = st.secrets["NOTIFICATION_EMAIL"]
-
-        msg.set_content(
-            f"""A user logged into ChemOasis.
-
-User: {user_email}
-Login method: {login_method}
-"""
-        )
-
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            smtp.login(
-                st.secrets["NOTIFICATION_EMAIL"],
-                st.secrets["GMAIL_APP_PASSWORD"]
-            )
-            smtp.send_message(msg)
-            print("Login notification email sent successfully")
-
-    except Exception as e:
-        print("Email notification error:", e)
-
-def record_login(user_email, login_method="email"):
-    try:
-        db.collection("login_events").add({
-            "email": user_email,
-            "login_method": login_method,
-            "login_time": firestore.SERVER_TIMESTAMP
-        })
-        send_login_notification(user_email, login_method)
-    except Exception as e:
-        print("Login tracking error:", e)
-def create_pdf(title, content):
-    from io import BytesIO
-
-    buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=letter)
-
-    width, height = letter
-    y = height - 50
-
-    pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(50, y, title)
-    y -= 35
-
-    pdf.setFont("Helvetica", 10)
-
-    for line in content.split("\n"):
-        words = line.split()
-        current_line = ""
-
-        for word in words:
-            test_line = current_line + " " + word
-
-            if pdf.stringWidth(test_line, "Helvetica", 10) < width - 100:
-                current_line = test_line
-            else:
-                pdf.drawString(50, y, current_line.strip())
-                y -= 15
-                current_line = word
-
-                if y < 50:
-                    pdf.showPage()
-                    pdf.setFont("Helvetica", 10)
-                    y = height - 50
-
-        if current_line:
-            pdf.drawString(50, y, current_line.strip())
-            y -= 15
-
-        y -= 5
-
-        if y < 50:
-            pdf.showPage()
-            pdf.setFont("Helvetica", 10)
-            y = height - 50
-
-    pdf.save()
-    buffer.seek(0)
-    return buffer.getvalue()
-
-
-# Page setup
-st.set_page_config(
-
-    
-    page_title="ChemOasis Chemistry",
-    page_icon="🧪"
-)
-st.markdown(
-    """
     <style>
-    /* =========================================================
-       CHEMOASIS GLOBAL THEME
-       ========================================================= */
-
-    :root {
-        --chemoasis-wine: #8B1E3F;
-        --chemoasis-wine-hover: #741832;
-        --chemoasis-bg: #f7f9fc;
-        --chemoasis-text: #1f2937;
-        --chemoasis-border: #cbd5e1;
-        --chemoasis-muted: #64748b;
-        --chemoasis-soft: #f3e8ec;
-    }
-
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], .stApp {
-        background-color: var(--chemoasis-bg) !important;
-        color: var(--chemoasis-text) !important;
-    }
-
-    /* Keep Streamlit's top bar light and prevent page headings from being cropped */
-    [data-testid="stHeader"] {
-        background-color: rgba(247, 249, 252, 0.96) !important;
-    }
-
-    .block-container {
-        padding-top: 6rem !important;
-        padding-bottom: 3rem !important;
-    }
-
-    /* =========================================================
-       TYPOGRAPHY
-       ========================================================= */
-
-    .stApp p,
-    .stApp label,
-    .stApp h1,
-    .stApp h2,
-    .stApp h3,
-    .stApp h4,
-    .stApp h5,
-    .stApp h6,
-    [data-testid="stMarkdownContainer"] {
-        color: var(--chemoasis-text) !important;
-    }
-
-    [data-testid="stWidgetLabel"],
-    [data-testid="stWidgetLabel"] p,
-    [data-testid="stWidgetLabel"] span,
-    .stTextInput label,
-    .stTextArea label,
-    .stSelectbox label {
-        color: var(--chemoasis-text) !important;
-        font-weight: 500 !important;
-        opacity: 1 !important;
-    }
-
-    /* =========================================================
-       TEXT / PASSWORD INPUTS
-       ========================================================= */
-
-    [data-baseweb="input"],
-    [data-baseweb="input"] > div,
-    .stTextInput [data-baseweb="input"] {
-        background-color: #ffffff !important;
-        border-color: var(--chemoasis-border) !important;
-    }
-
-    .stTextInput input {
-        background-color: #ffffff !important;
-        color: var(--chemoasis-text) !important;
-        -webkit-text-fill-color: var(--chemoasis-text) !important;
-        caret-color: var(--chemoasis-wine) !important;
-    }
-
-    .stTextInput input::placeholder {
-        color: var(--chemoasis-muted) !important;
-        -webkit-text-fill-color: var(--chemoasis-muted) !important;
-        opacity: 1 !important;
-    }
-
-    .stTextInput [data-baseweb="input"]:focus-within {
-        border-color: var(--chemoasis-wine) !important;
-        box-shadow: 0 0 0 1px var(--chemoasis-wine) !important;
-    }
-
-    .stTextInput button,
-    .stTextInput button svg {
-        color: var(--chemoasis-text) !important;
-        fill: var(--chemoasis-text) !important;
-    }
-
-    /* =========================================================
-       TEXT AREAS
-       ========================================================= */
-
-    .stTextArea textarea {
-        background-color: #ffffff !important;
-        color: var(--chemoasis-text) !important;
-        -webkit-text-fill-color: var(--chemoasis-text) !important;
-        border-color: var(--chemoasis-border) !important;
-        caret-color: var(--chemoasis-wine) !important;
-    }
-
-    .stTextArea textarea::placeholder {
-        color: var(--chemoasis-muted) !important;
-        -webkit-text-fill-color: var(--chemoasis-muted) !important;
-        opacity: 1 !important;
-    }
-
-    /* =========================================================
-       SELECT BOXES / DROPDOWNS
-       ========================================================= */
-
-    .stSelectbox [data-baseweb="select"] > div,
-    [data-baseweb="select"] > div {
-        background-color: #ffffff !important;
-        color: var(--chemoasis-text) !important;
-        border-color: var(--chemoasis-border) !important;
-    }
-
-    [data-baseweb="select"] span,
-    [data-baseweb="select"] div {
-        color: var(--chemoasis-text) !important;
-    }
-
-    [data-baseweb="select"] svg {
-        color: var(--chemoasis-text) !important;
-        fill: var(--chemoasis-text) !important;
-    }
-
-    [data-baseweb="popover"],
-    [data-baseweb="menu"],
-    ul[role="listbox"] {
-        background-color: #ffffff !important;
-        color: var(--chemoasis-text) !important;
-    }
-
-    [role="option"] {
-        background-color: #ffffff !important;
-        color: var(--chemoasis-text) !important;
-    }
-
-    [role="option"]:hover,
-    [role="option"][aria-selected="true"] {
-        background-color: var(--chemoasis-soft) !important;
-        color: var(--chemoasis-text) !important;
-    }
-
-    /* =========================================================
-       BUTTONS
-       ========================================================= */
-
-    .stButton > button,
-    .stDownloadButton > button {
-        background-color: var(--chemoasis-wine) !important;
-        color: #ffffff !important;
-        border: 1px solid var(--chemoasis-wine) !important;
-        border-radius: 8px !important;
-        font-weight: 600 !important;
-    }
-
-    .stButton > button p,
-    .stButton > button span,
-    .stDownloadButton > button p,
-    .stDownloadButton > button span {
-        color: #ffffff !important;
-    }
-
-    .stButton > button:hover,
-    .stDownloadButton > button:hover {
-        background-color: var(--chemoasis-wine-hover) !important;
-        color: #ffffff !important;
-        border-color: var(--chemoasis-wine-hover) !important;
-    }
-
-    .stButton > button:hover p,
-    .stButton > button:hover span,
-    .stDownloadButton > button:hover p,
-    .stDownloadButton > button:hover span {
-        color: #ffffff !important;
-    }
-
-    /* =========================================================
-       LINKS / DIVIDERS
-       ========================================================= */
-
-    a {
-        color: var(--chemoasis-wine) !important;
-    }
-
-    hr {
-        border-color: #d8dee8 !important;
-    }
-
-    /* =========================================================
-       CHEMOASIS PROFESSOR CARD HELPERS
-       ========================================================= */
-
-    .chemoasis-professor-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-height: 32px;
-        color: var(--chemoasis-text) !important;
-    }
-
-    .chemoasis-professor-title svg {
-        width: 24px !important;
-        height: 24px !important;
-        min-width: 24px !important;
-        min-height: 24px !important;
-        max-width: 24px !important;
-        max-height: 24px !important;
-        flex: 0 0 24px !important;
-        display: block !important;
-    }
-
-    .chemoasis-professor-title span {
-        color: var(--chemoasis-text) !important;
-        font-size: 1.25rem !important;
-        font-weight: 600 !important;
-        line-height: 1.2 !important;
-        white-space: nowrap !important;
-    }
-
-    @media (max-width: 900px) {
-        .chemoasis-professor-title span {
-            font-size: 1.05rem !important;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f7f9fc;
+            color: #1f2937;
         }
-    }
 
+        header {
+            background: #ffffff;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        nav {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: #1f2937;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        nav a:hover,
+        nav a.active {
+            color: #8B1E3F;
+        }
+
+        .page-section {
+            display: none;
+            min-height: 62vh;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 100px 20px;
+        }
+
+        .hero h1 {
+            font-size: 52px;
+            margin-bottom: 15px;
+        }
+
+        .hero h2 {
+            font-size: 28px;
+            font-weight: normal;
+        }
+
+        .hero p {
+            font-size: 19px;
+            max-width: 750px;
+            margin: 25px auto;
+            line-height: 1.6;
+        }
+
+        .button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 15px 28px;
+            background: #8B1E3F;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .features {
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+            padding: 70px 8%;
+            text-align: center;
+        }
+
+        .features.active {
+            display: flex;
+        }
+
+        .feature {
+            background: white;
+            width: 230px;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        }
+
+        .founder-photo {
+            width: 180px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 4px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        footer {
+            text-align: center;
+            padding: 35px;
+            background: #8B1E3F;
+            color: white;
+        }
+
+        footer p {
+            margin: 12px 0;
+        }
+
+        @media (max-width: 900px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            nav {
+                justify-content: center;
+                gap: 15px;
+            }
+
+            .hero h1 {
+                font-size: 38px;
+            }
+        }
     </style>
-    """,
-    unsafe_allow_html=True
-)
+</head>
 
-if "user" not in st.session_state:
-    st.session_state.user = None
+<body>
 
-if st.user.is_logged_in:
-    st.session_state.user = st.user.to_dict()
+<header>
 
-if st.session_state.user is None:
-
-    st.markdown(
-    """
-    <div style="display:flex; align-items:center; gap:8px; margin-bottom:0.25rem;">
-        <svg width="34" height="34" viewBox="0 0 24 24"
-             xmlns="http://www.w3.org/2000/svg">
-            <path
-                d="M12 2C12 2 5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13z"
-                fill="#8B1E3F"/>
-        </svg>
-        <span style="font-size:3.5rem; font-weight:700; line-height:1;">
-            ChemOasis
-        </span>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-    st.subheader("One Account. Multiple ChemOasis Professors.")
-    st.write("Sign in to continue")
-    
-
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-
-    if st.button("Sign In"):
-        result = firebase_signin(email, password)
-
-        if "idToken" in result:
-            st.session_state.user = result
-            record_login(email, "email")
-            st.success("Signed in successfully!")
-            st.rerun()
-        else:
-            st.error("Invalid email or password.")
-
-    if st.button("Create Account"):
-        result = firebase_signup(email, password)
-
-        if "idToken" in result:
-            st.success("Account created! You can now sign in.")
-        else:
-            st.error(result)
-
-    if st.button("Continue with Google"):
-        st.login("google")
-
-    if st.button("Continue with Microsoft"):
-        st.login("microsoft")
-
-    st.subheader("Your Personal Learning Platform")
-
-    st.write(
-        "ChemOasis is an intelligent learning and teaching platform for students and instructors. "
-        "Choose a specialized ChemOasis Professor to learn concepts, practice problems, generate questions, "
-        "create worksheets, and build customized study materials."
-    )
-
-    st.write(
-        "Explore Chemistry, Biology, Neuroscience, Immunology, Physics, and Mathematics—all with one account."
-    )
-
-    st.stop()
-
-# ============================================================
-# # CHEMOASIS DASHBOARD
-# ============================================================
-
-if "active_professor" not in st.session_state:
-    st.session_state.active_professor = None
-
-active_professor = st.session_state.active_professor
-
-
-# ------------------------------------------------------------
-# PROFESSOR CONFIGURATION
-# ------------------------------------------------------------
-
-professor_configs = {
-    "bioprof": {
-        "title": "ChemOasis Biology",
-        "subject": "Biology",
-        "description": "Your Personal Biology Professor",
-        "levels": [
-            "Introductory Biology",
-            "General Biology I",
-            "General Biology II",
-            "Cell Biology",
-            "Molecular Biology",
-            "Advanced Biology"
-        ]
-    },
-
-    "neuroprof": {
-        "title": "ChemOasis Neuroscience",
-        "subject": "Neuroscience",
-        "description": "Your Personal Neuroscience Professor",
-        "levels": [
-            "Introduction to Neuroscience",
-            "Cellular Neuroscience",
-            "Systems Neuroscience",
-            "Behavioral Neuroscience",
-            "Cognitive Neuroscience",
-            "Advanced Neuroscience"
-        ]
-    },
-
-    "immunoprof": {
-        "title": "ChemOasis Immunology",
-        "subject": "Immunology",
-        "description": "Your Personal Immunology Professor",
-        "levels": [
-            "Introduction to Immunology",
-            "General Immunology",
-            "Cellular Immunology",
-            "Molecular Immunology",
-            "Clinical Immunology",
-            "Advanced Immunology"
-        ]
-    },
-
-    "phyprof": {
-        "title": "ChemOasis Physics",
-        "subject": "Physics",
-        "description": "Your Personal Physics Professor",
-        "levels": [
-            "Foundations of Physics",
-            "General Physics I",
-            "General Physics II",
-            "Mechanics",
-            "Electricity and Magnetism",
-            "Modern Physics"
-        ]
-    },
-
-    "mathprof": {
-        "title": "ChemOasis Mathematics",
-        "subject": "Mathematics",
-        "description": "Your Personal Mathematics Professor",
-        "levels": [
-            "Foundations of Mathematics",
-            "College Algebra",
-            "Precalculus",
-            "Calculus I",
-            "Calculus II",
-            "Advanced Mathematics"
-        ]
-    }
-}
-
-
-# ------------------------------------------------------------
-# DASHBOARD
-# ------------------------------------------------------------
-
-if active_professor is None:
-
-    st.markdown(
-        """
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:0.25rem;">
-            <svg width="34" height="34" viewBox="0 0 24 24"
-                 xmlns="http://www.w3.org/2000/svg">
-                <path
-                    d="M12 2C12 2 5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13z"
-                    fill="#8B1E3F"/>
-            </svg>
-            <span style="font-size:3.5rem; font-weight:700; line-height:1;">
-                ChemOasis
-            </span>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.subheader("Choose Your ChemOasis Professor")
-    st.write("Where Chemistry Becomes Easier to Learn")
-
-    if st.button("Log Out", key="prof_logout"):
-        st.logout()
-
-    # ============================================================
-    # PROFESSOR CARDS
-    # ============================================================
-
-    col1, col2, col3 = st.columns(3, gap="medium")
-
-    droplet_svg = """
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
-         aria-hidden="true" focusable="false">
-        <path
-            d="M12 2C12 2 5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13z"
-            fill="#8B1E3F"/>
+    <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 24 24"
+         xmlns="http://www.w3.org/2000/svg"
+         style="vertical-align: -3px; margin-right: 7px;">
+<path
+    d="M12 2C12 2 5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13z"
+    fill="#8B1E3F"/>
     </svg>
-    """
-
-    def professor_card(column, title, subject, button_label, button_key, professor_key):
-        with column:
-            st.markdown(
-                f"""<div class="chemoasis-professor-title">{droplet_svg}<span>{title}</span></div>""",
-                unsafe_allow_html=True
-            )
-
-            st.write(subject)
-
-            if st.button(
-                button_label,
-                key=button_key,
-                use_container_width=True
-            ):
-                st.session_state.active_professor = professor_key
-                st.rerun()
-
-    professor_card(
-        col1,
-        "ChemOasis Chemistry",
-        "Chemistry",
-        "Open ChemOasis Chemistry",
-        "open_chem",
-        "chemprof"
-    )
-
-    professor_card(
-        col2,
-        "ChemOasis Biology",
-        "Biology",
-        "Open ChemOasis Biology",
-        "open_bio",
-        "bioprof"
-    )
-
-    professor_card(
-        col3,
-        "ChemOasis Neuroscience",
-        "Neuroscience",
-        "Open ChemOasis Neuroscience",
-        "open_neuro",
-        "neuroprof"
-    )
-
-    col4, col5, col6 = st.columns(3, gap="medium")
-
-    professor_card(
-        col4,
-        "ChemOasis Immunology",
-        "Immunology",
-        "Open ChemOasis Immunology",
-        "open_immuno",
-        "immunoprof"
-    )
-
-    professor_card(
-        col5,
-        "ChemOasis Physics",
-        "Physics",
-        "Open ChemOasis Physics",
-        "open_physics",
-        "phyprof"
-    )
-
-    professor_card(
-        col6,
-        "ChemOasis Mathematics",
-        "Mathematics",
-        "Open ChemOasis Mathematics",
-        "open_math",
-        "mathprof"
-    )
-
-    st.stop()
-
-
-# ------------------------------------------------------------
-# BACK BUTTON
-# ------------------------------------------------------------
-
-if st.button("← Back to ChemOasis", key="back_to_prof"):
-    st.session_state.active_professor = None
-    st.rerun()
-LAB_RESTRICTION = """
-You are working in Principles of Chemistry Laboratory mode.
-
-The approved Principles of Chemistry Laboratory manual is the
-primary and controlling course source.
-
-STRICT RULES:
-
-1. Keep all responses within the scope of the approved lab manual.
-
-2. You may answer questions that appear in the lab manual even if
-   the manual itself does not provide the answer.
-
-3. When the manual does not explicitly provide the answer, use
-   established general chemistry principles, calculations, and
-   experimental reasoning to derive the answer.
-
-4. Any derived answer must remain consistent with the experiment,
-   chemicals, procedures, quantities, terminology, assumptions,
-   objectives, pre-lab questions, and post-lab questions in the manual.
-
-5. Do not introduce unrelated experiments, procedures, chemicals,
-   or topics outside the scope of the approved lab manual.
-
-6. If a request is unrelated to the approved lab manual, respond:
-   "This topic is outside the approved Principles of Chemistry
-   Laboratory course materials."
-
-7. Never claim that a derived answer was explicitly stated in the
-   lab manual when it was not.
-   8. Never use quotation marks to present wording as a direct quote
-   from the lab manual unless the exact wording is verified in the
-   retrieved source.
-
-9. When paraphrasing information from the manual, say:
-   "Based on the approved lab manual..."
-
-10. When the manual does not explicitly provide an answer and you
-    derive it using chemistry, clearly say:
-    "Using general chemistry principles..."
-
-11. Never invent page numbers, quotations, procedures, measurements,
-    chemicals, or statements and attribute them to the lab manual.
-    12. CRITICAL SCOPE GATE:
-Before answering, first determine whether the student's specific
-question is actually covered by an experiment, procedure, concept,
-calculation, data analysis task, pre-lab question, post-lab question,
-or other content in the approved lab manual.
-
-A broad similarity is NOT sufficient.
-
-For example, the presence of "reactions" in the manual does NOT
-authorize explanations of unrelated reaction mechanisms such as
-SN1, SN2, E1, E2, electrophilic addition, or other topics that are
-not actually part of the approved manual.
-
-13. GENERAL CHEMISTRY KNOWLEDGE:
-You may use general chemistry principles ONLY AFTER the student's
-question has been established as within the scope of the approved
-lab manual.
-
-General chemistry knowledge may be used to explain, calculate,
-interpret, or derive an answer for an in-scope manual question.
-It must NEVER be used to expand the course into a topic that is
-not contained in the approved manual.
-
-14. WHEN UNCERTAIN:
-If you cannot establish from the retrieved lab source that the
-specific topic is within the approved manual, treat it as
-out of scope and respond ONLY:
-
-"This topic is outside the approved Principles of Chemistry
-Laboratory course materials."
-
-Do not provide an explanation of the outside topic afterward.
-12. If general chemistry knowledge conflicts with the approved lab
-    manual regarding an experiment's procedure, chemicals, quantities,
-    calculations, terminology, or instructions, follow the approved
-    lab manual for this course. Do not replace the manual's procedure
-    with a different standard laboratory procedure.
-    13. EXPERIMENT AND QUESTION RECOGNITION:
-    When a student refers to an experiment number, experiment name,
-    pre-lab question, post-lab question, report-sheet question, or
-    question number, identify the relevant experiment from the
-    retrieved approved lab materials before answering.
-
-14. If the student writes a short reference such as:
-    "Experiment 4, Question 3"
-    "Expt 8 post-lab question 2"
-    or "Question 5 from the vinegar titration experiment",
-    search the approved lab materials for that experiment and question
-    and answer within that specific context.
-
-15. Do not guess the content of a numbered question. If retrieval does
-    not provide enough information to determine which question the
-    student means, ask the student to provide the question text instead
-    of inventing or assuming the question.
-
-16. When answering a recognized experiment question, use the
-    experiment's own procedure, chemicals, data requirements,
-    equations, terminology, and objectives as the controlling context."""
-def teach_until_understood(professor_name, subject, topic, course_level, difficulty):
-    prompt = f"""
-You are {professor_name}, an expert professor of {subject}.
-
-The student wants to learn:
-
-{topic}
-
-Course level: {course_level}
-Difficulty: {difficulty}
-
-{LAB_RESTRICTION if course_level == "Principles of Chemistry Laboratory" else ""}
-
-Use the "Teach Me Until I Understand" method.
-
-IMPORTANT:
-Do NOT give a long complete lecture.
-
-Follow this learning cycle:
-
-1. DIAGNOSE
-   Ask one short question to determine what the student already understands.
-
-2. TEACH
-   Explain only the part the student needs next.
-
-3. CHECK
-   Ask one question to test understanding.
-
-4. ADAPT
-   If the student is confused or incorrect, teach the concept differently.
-   Do not simply repeat the same explanation.
-
-5. PRACTICE
-   Give a new example or application.
-
-6. MASTERY
-   Do not declare mastery after only one correct answer.
-   The student should be able to:
-   - explain the concept,
-   - recognize it,
-   - apply it,
-   - solve a new problem,
-   - explain why the answer is correct.
-
-For this FIRST response, begin only with a friendly introduction
-and ONE diagnostic question.
-
-Do not provide the answer to the diagnostic question.
-"""
-
-    return prompt
-def teach_mode_ui(
-    session_key,
-    professor_name,
-    subject,
-    topic,
-    course_level,
-    difficulty
-):
-    if session_key not in st.session_state:
-        st.session_state[session_key] = None
-
-    session = st.session_state[session_key]
-
-    # START A NEW TEACHING SESSION
-    if session is None:
-
-        if st.button(
-            "🎓 Start Teaching",
-            key=f"{session_key}_start"
-        ):
-            if not topic:
-                st.warning(f"Please enter a {subject.lower()} topic first.")
-                return
-
-            first_prompt = teach_until_understood(
-                professor_name,
-                subject,
-                topic,
-                course_level,
-                difficulty
-            )
-
-            response = client.responses.create(
-    model="gpt-5-mini",
-    input=first_prompt,
-    tools=(
-        [
-            {
-                "type": "file_search",
-                "vector_store_ids": [LAB_VECTOR_STORE_ID]
-            }
-        ]
-        if course_level == "Principles of Chemistry Laboratory"
-        else []
-    )
-)
-
-            st.session_state[session_key] = {
-                "topic": topic,
-                "course_level": course_level,
-                "difficulty": difficulty,
-                "professor": professor_name,
-                "subject": subject,
-                "history": [
-                    {
-                        "role": "assistant",
-                        "content": response.output_text
-                    }
-                ],
-                "turn": 1,
-                "active": True
-            }
-
-            st.rerun()
-
-        return
-
-    # SHOW CURRENT LESSON
-    st.markdown("### 🎓 Teach Me Until I Understand")
-    st.caption(
-        f"Topic: {session['topic']} | "
-        f"Level: {session['course_level']} | "
-        f"Difficulty: {session['difficulty']}"
-    )
-
-    # DISPLAY CONVERSATION
-    for message in session["history"]:
-
-        if message["role"] == "assistant":
-            with st.chat_message("assistant"):
-                st.markdown(message["content"])
-
-        else:
-            with st.chat_message("user"):
-                st.markdown(message["content"])
-
-    # CONTINUE LESSON
-    if session["active"]:
-
-        answer = st.text_area(
-            "Your answer:",
-            key=f"{session_key}_answer_{session['turn']}",
-            placeholder="Explain what you think. It is okay if you are unsure."
-        )
-
-        if st.button(
-            "Continue Teaching →",
-            key=f"{session_key}_continue_{session['turn']}"
-        ):
-
-            if not answer.strip():
-                st.warning("Please enter an answer first.")
-                return
-
-            session["history"].append({
-                "role": "user",
-                "content": answer
-            })
-
-            conversation = "\n\n".join(
-                [
-                    f"{m['role'].upper()}: {m['content']}"
-                    for m in session["history"]
-                ]
-            )
-
-            continuation_prompt = f"""
-You are {session['professor']}, an expert professor of
-{session['subject']}.
-
-You are conducting an adaptive tutoring session called:
-
-"Teach Me Until I Understand"
-
-Topic:
-{session['topic']}
-
-Course level:
-{session['course_level']}
-
-Difficulty:
-{session['difficulty']}
-{LAB_RESTRICTION if session["course_level"] == "Principles of Chemistry Laboratory" else ""}
-Conversation so far:
-
-{conversation}
-
-Your job is NOT simply to give the answer.
-
-Carefully evaluate the student's newest response.
-
-Follow these rules:
-
-1. DIAGNOSE
-Determine what the student understands and what misconception
-or knowledge gap remains.
-
-2. FEEDBACK
-Give brief feedback on the student's answer.
-
-3. ADAPT
-If the student is incorrect or confused, explain the concept
-using a DIFFERENT teaching approach.
-
-Possible approaches include:
-- analogy
-- simple example
-- visual description
-- step-by-step reasoning
-- real-world application
-- comparison
-- Socratic questioning
-
-Do not simply repeat your previous explanation.
-
-4. CHECK
-Ask exactly ONE new question at the end of your response.
-
-5. PROGRESS TOWARD MASTERY
-Gradually test whether the student can:
-
-- explain the concept
-- recognize the concept
-- apply the concept
-- solve a new problem
-- explain why the solution is correct
-
-Do NOT declare mastery after one correct answer.
-
-6. MASTERY VERIFIED
-Only when the conversation provides strong evidence that the
-student can successfully demonstrate all five mastery abilities,
-finish with:
-
-🏆 MASTERY VERIFIED
-
-Then briefly summarize what the student has mastered.
-
-Until mastery is demonstrated, continue teaching and finish
-with exactly ONE next question.
-"""
-
-            response = client.responses.create(
-    model="gpt-5-mini",
-    input=continuation_prompt,
-    tools=(
-        [
-            {
-                "type": "file_search",
-                "vector_store_ids": [LAB_VECTOR_STORE_ID]
-            }
-        ]
-        if session["course_level"] == "Principles of Chemistry Laboratory"
-        else []
-    )
-)
-
-            professor_response = response.output_text
-
-            session["history"].append({
-                "role": "assistant",
-                "content": professor_response
-            })
-
-            session["turn"] += 1
-
-            if "🏆 MASTERY VERIFIED" in professor_response:
-                session["active"] = False
-
-            st.session_state[session_key] = session
-            st.rerun()
-
-    else:
-        st.success("🏆 Concept mastery verified!")
-
-    if st.button(
-        "🔄 Start a New Lesson",
-        key=f"{session_key}_reset"
-    ):
-        st.session_state[session_key] = None
-        st.rerun()
-# ============================================================
-# NON-CHEMISTRY PROFESSORS
-# ============================================================
-
-if active_professor in professor_configs:
-
-    config = professor_configs[active_professor]
-
-    st.divider()
-    st.markdown(
-    f"""
-    <div style="display:flex; align-items:center; gap:8px;">
-        <svg width="34" height="34" viewBox="0 0 24 24"
-             xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C12 2 5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13z"
-                  fill="#8B1E3F"/>
-        </svg>
-        <span style="font-size:2.5rem; font-weight:700;">
-            {config["title"]}
-        </span>
+    ChemOasis
+</div>
+
+    <nav>
+        <a href="#home" data-section="home">Home</a>
+        <a href="#features" data-section="features">Features</a>
+        <a href="#students" data-section="students">Students</a>
+        <a href="#instructors" data-section="instructors">Instructors</a>
+        <a href="#about" data-section="about">About</a>
+        <a href="#contact" data-section="contact">Contact</a>
+
+        <a href="https://chemoasis.streamlit.app/"
+           target="_blank">
+           Sign In
+        </a>
+    </nav>
+
+</header>
+
+
+<!-- HOME -->
+
+<section id="home" class="page-section hero active">
+
+    <h1>Where Chemistry Becomes Easier to Learn</h1>
+
+    <h2>Your Personal Chemistry Professor</h2>
+
+    <p>
+        ChemOasis helps students understand chemistry through clear explanations,
+        guided practice, quizzes, worksheets, exam preparation, and personalized
+        learning support. It also helps instructors create high-quality chemistry
+        teaching materials efficiently.
+    </p>
+
+    <a class="button"
+       href="https://chemoasis.streamlit.app/"
+       target="_blank">
+       Launch ChemOasis
+    </a>
+
+</section>
+
+
+<!-- FEATURES -->
+
+<section id="features" class="page-section features">
+
+    <div class="feature">
+
+        <h3>Learn Concepts</h3>
+
+        <p>
+            Understand chemistry concepts with clear,
+            step-by-step explanations.
+        </p>
+
     </div>
-    """,
-    unsafe_allow_html=True
-)
-    st.subheader(config["description"])
-    st.markdown("**Manoj K. Manna, Ph.D.**")
-    st.markdown("**Founder & Chief Executive Officer, ChemOasis**")
-
-    mode = st.selectbox(
-        f"What would you like {config['title']} to do?",
-        [
-            "Explain a Concept",
-            "Generate MCQs",
-            "Create Worksheet",
-            "Practice Problems",
-            "Check Student Answer",
-"🎓 Teach Me Until I Understand"
-        ],
-        key=f"{active_professor}_mode"
-    )
-
-    course_level = st.selectbox(
-        "Select course level:",
-        config["levels"],
-        key=f"{active_professor}_level"
-    )
-
-    difficulty = st.selectbox(
-        "Select difficulty:",
-        [
-            "Easy",
-            "Medium",
-            "Hard",
-            "Exam Level"
-        ],
-        key=f"{active_professor}_difficulty"
-    )
-
-    num_questions = st.selectbox(
-        "Number of questions:",
-        [5, 10, 15, 20],
-        index=1,
-        key=f"{active_professor}_num_questions"
-    )
-
-    topic = st.text_input(
-        f"Enter a {config['subject'].lower()} topic or question:",
-        key=f"{active_professor}_topic"
-        
-    )
-    if mode == "🎓 Teach Me Until I Understand":
-        teach_mode_ui(
-            session_key=f"{active_professor}_teach_session",
-            professor_name=config["title"],
-            subject=config["subject"],
-            topic=topic,
-            course_level=course_level,
-            difficulty=difficulty
-        )
-
-        st.stop()
-    if st.button("Generate", key=f"{active_professor}_generate"):
-
-        if topic:
-
-            if mode == "Explain a Concept":
-                task = f"""
-Explain the following {config['subject']} concept clearly and step by step:
-
-{topic}
-
-Course level: {course_level}
-Difficulty level: {difficulty}
-
-Use clear college-level language.
-Include an example and one practice question.
-"""
-            
-
-            elif mode == "Generate MCQs":
-                task = f"""
-Create EXACTLY {num_questions} multiple-choice questions about {config['subject']}.
-
-Topic: {topic}
-Course level: {course_level}
-Difficulty level: {difficulty}
-
-IMPORTANT REQUIREMENTS:
-1. Generate exactly {num_questions} questions.
-2. Number the questions from 1 through {num_questions}.
-3. Give exactly four choices (A-D) for every question.
-4. Do not repeat questions.
-5. After the final question, write the heading exactly:
-Answer Key
-6. In the Answer Key, provide the correct answer and a brief explanation.
-"""
-
-            elif mode == "Create Worksheet":
-                task = f"""
-Create a college-level {config['subject']} worksheet about:
-
-{topic}
-
-Course level: {course_level}
-Difficulty level: {difficulty}
-
-Include fill-in-the-blank questions,
-short-answer questions,
-and appropriate application or calculation problems.
-
-After all questions, write the heading exactly:
-Answer Key
-"""
-
-            elif mode == "Practice Problems":
-                task = f"""
-Create exactly {num_questions} college-level {config['subject']} practice problems about:
-
-{topic}
-
-Course level: {course_level}
-Difficulty level: {difficulty}
-
-After all problems, write the heading exactly:
-Answer Key
-
-Then provide complete solutions.
-"""
-
-            elif mode == "Check Student Answer":
-                task = f"""
-A student submitted the following {config['subject']} answer:
-
-{topic}
-
-Course level: {course_level}
-Difficulty level: {difficulty}
-
-Evaluate the answer.
-Identify what is correct and incorrect.
-Explain the concept clearly.
-Then provide a corrected answer.
-"""
-
-            response = client.responses.create(
-                model="gpt-5-mini",
-                instructions=f"""
-You are {config['title']}, an expert college-level {config['subject']} professor.
-
-Teach accurately, clearly, and step by step.
-
-Selected course level:
-{course_level}
-
-Selected difficulty:
-{difficulty}
-
-Use correct terminology and focus on helping students understand.
-""",
-                input=task
-            )
-
-            full_text = response.output_text
-            st.markdown(full_text)
-
-            if mode in [
-                "Generate MCQs",
-                "Create Worksheet",
-                "Practice Problems"
-            ]:
-
-                student_text = full_text.split("Answer Key")[0]
-
-                student_pdf = create_pdf(
-                    f"{config['title']} - Student Version",
-                    student_text
-                )
-
-                instructor_pdf = create_pdf(
-                    f"{config['title']} - Instructor Version",
-                    full_text
-                )
-
-                st.download_button(
-                    "📄 Download Student Version",
-                    data=student_pdf,
-                    file_name=f"{config['subject']}_Student_Version.pdf",
-                    mime="application/pdf",
-                    key=f"{active_professor}_student_pdf"
-                )
-
-                st.download_button(
-                    "🔑 Download Instructor Version",
-                    data=instructor_pdf,
-                    file_name=f"{config['subject']}_Instructor_Version.pdf",
-                    mime="application/pdf",
-                    key=f"{active_professor}_instructor_pdf"
-                )
-
-        else:
-            st.warning(
-                f"Please enter a {config['subject'].lower()} topic or question."
-            )
-
-    st.stop()
 
 
-# ============================================================
-# # CHEMOASIS CHEMISTRY
-# ============================================================
+    <div class="feature">
 
-if active_professor == "chemprof":
+        <h3>Practice Questions</h3>
 
-    st.divider()
-    st.markdown(
-    """
-    <div style="display:flex; align-items:center; gap:8px;">
-        <svg width="34" height="34" viewBox="0 0 24 24"
-             xmlns="http://www.w3.org/2000/svg">
-            <path
-                d="M12 2C12 2 5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13z"
-                fill="#8B1E3F"/>
-        </svg>
-        <span style="font-size:2.5rem; font-weight:700;">
-            ChemOasis Chemistry
-        </span>
+        <p>
+            Generate chemistry questions at different
+            course and difficulty levels.
+        </p>
+
     </div>
-    """,
-    unsafe_allow_html=True
-)
-    st.subheader("Your Personal Chemistry Professor")
-    st.markdown("**Manoj K. Manna, Ph.D.**")
-    st.markdown("**Founder & Chief Executive Officer, ChemOasis**")
-
-    mode = st.selectbox(
-        "What would you like ChemOasis Chemistry to do?",
-        [
-            "Explain a Concept",
-            "Generate MCQs",
-            "Create Worksheet",
-            "Practice Problems",
-            "Check Student Answer",
-"🎓 Teach Me Until I Understand"
-        ]
-    )
-
-    course_level = st.selectbox(
-        "Select course level:",
-        [
-            "Foundations of Chemistry",
-            "General Chemistry I",
-            "General Chemistry II",
-            "Principles of Chemistry Laboratory",
-            "Organic Chemistry I",
-            "Organic Chemistry II",
-            "Advanced Chemistry"
-        ]
-    )
-
-    difficulty = st.selectbox(
-        "Select difficulty:",
-        [
-            "Easy",
-            "Medium",
-            "Hard",
-            "Exam Level"
-        ]
-    )
-
-    num_questions = st.selectbox(
-        "Number of questions:",
-        [5, 10, 15, 20],
-        index=1
-    )
-
-    topic = st.text_input(
-        "Enter a chemistry topic or question:"
-    )
-    if mode == "🎓 Teach Me Until I Understand":
-        teach_mode_ui(
-            session_key="chemprof_teach_session",
-            professor_name="ChemOasis Chemistry",
-            subject="Chemistry",
-            topic=topic,
-            course_level=course_level,
-            difficulty=difficulty
-        )
-
-        st.stop()
-    if st.button("Generate"):
-
-        if topic:
-
-            if mode == "Explain a Concept":
-                task = f"""
-Explain the following chemistry concept clearly and step by step:
-
-{topic}
-
-Course level: {course_level}
-Difficulty level: {difficulty}
-
-Use clear college-level language.
-Include an example and one practice question.
-"""
 
 
-            elif mode == "Generate MCQs":
-                task = f"""
-Create EXACTLY {num_questions} multiple-choice chemistry questions.
+    <div class="feature">
 
-Topic: {topic}
-Course level: {course_level}
-Difficulty level: {difficulty}
+        <h3>Worksheets & Quizzes</h3>
 
-IMPORTANT REQUIREMENTS:
-1. Generate exactly {num_questions} questions.
-2. Number the questions from 1 through {num_questions}.
-3. Give exactly four choices (A-D) for every question.
-4. Do not repeat questions.
-5. After the final question, write the heading exactly:
-Answer Key
-6. In the Answer Key, provide the correct answer and a brief explanation.
-"""
+        <p>
+            Create customized chemistry worksheets,
+            quizzes, and answer keys.
+        </p>
 
-            elif mode == "Create Worksheet":
-                task = f"""
-Create a college chemistry worksheet about:
+    </div>
 
-{topic}
 
-Course level: {course_level}
-Difficulty level: {difficulty}
+    <div class="feature">
 
-Include fill-in-the-blank questions,
-short-answer questions,
-and calculation problems where appropriate.
+        <h3>Exam Preparation</h3>
 
-After all questions, write the heading exactly:
-Answer Key
-"""
+        <p>
+            Practice General Chemistry and Organic
+            Chemistry with assistance.
+        </p>
 
-            elif mode == "Practice Problems":
-                task = f"""
-Create exactly {num_questions} college-level chemistry practice problems about:
+    </div>
 
-{topic}
+</section>
 
-Course level: {course_level}
-Difficulty level: {difficulty}
 
-After all problems, write the heading exactly:
-Answer Key
+<!-- STUDENTS -->
 
-Then provide complete solutions.
-"""
+<section id="students" class="page-section hero">
 
-            elif mode == "Check Student Answer":
-                task = f"""
-A student submitted the following chemistry answer:
+    <h2>For Students</h2>
 
-{topic}
+    <p>
+        Learn chemistry with clear explanations, guided practice,
+        customized questions, worksheets, and exam preparation.
+        ChemOasis helps you study at your own pace and strengthen
+        difficult chemistry concepts.
+    </p>
 
-Course level: {course_level}
-Difficulty level: {difficulty}
+    <a class="button"
+       href="https://chemoasis.streamlit.app/"
+       target="_blank">
+       Start Learning
+    </a>
 
-Evaluate the answer.
-Identify what is correct and incorrect.
-Explain the chemistry clearly.
-Then provide a corrected answer.
-"""
+</section>
 
-            response = client.responses.create(
-                model="gpt-5-mini",
-                instructions=f"""
-The selected course level is: {course_level}.
-The selected difficulty level is: {difficulty}.
 
-You are ChemOasis Chemistry, an expert college chemistry professor.
+<!-- INSTRUCTORS -->
 
-Teach chemistry accurately, clearly, and step by step.
-Use correct chemical notation and terminology.
-{LAB_RESTRICTION if course_level == "Principles of Chemistry Laboratory" else ""}
-Focus on helping students understand rather than simply giving answers.
-""",
-                input=task,
-tools=(
-    [
-        {
-            "type": "file_search",
-            "vector_store_ids": [LAB_VECTOR_STORE_ID]
+<section id="instructors" class="page-section hero">
+
+    <h2>For Instructors</h2>
+
+    <p>
+        Create chemistry questions, quizzes, worksheets,
+        answer keys, practice problems, and customized
+        teaching materials.
+
+        ChemOasis helps instructors save time while creating
+        high-quality chemistry learning resources.
+    </p>
+
+    <a class="button"
+       href="https://chemoasis.streamlit.app/"
+       target="_blank">
+       Create Teaching Materials
+    </a>
+
+</section>
+
+
+<!-- ABOUT -->
+
+<section id="about" class="page-section hero">
+
+    <img
+        src="Passport Horizontal 630x810.jpg"
+        alt="Manoj K. Manna, Ph.D., Founder, ChemOasis"
+        class="founder-photo"
+    >
+
+    <h2>About ChemOasis</h2>
+
+    <p>
+        <strong>Founded September 1, 2026</strong>
+    </p>
+
+
+    <p>
+        <strong>Mission:</strong>
+
+        Make science easier to understand,
+        accessible to learn, and exciting to explore.
+    </p>
+
+
+    <p>
+        <strong>Vision:</strong>
+
+        Build a lasting learning environment where students,
+        regardless of background or location, can find excellent
+        teaching, practice, mentorship, and scientific curiosity.
+    </p>
+
+
+    <p>
+        <strong>Long-Term Aspiration:</strong>
+
+        Establish a permanent educational presence in the
+        United States that combines digital learning with
+        physical spaces for science education, experimentation,
+        mentorship, and community engagement.
+    </p>
+
+
+    <p>
+        ChemOasis was founded by Manoj K. Manna, Ph.D.,
+        a chemistry educator and researcher with experience
+        in chemistry teaching and interdisciplinary scientific
+        research.
+    </p>
+
+
+    <p>
+        ChemOasis combines chemistry education with intelligent
+        learning technology to help students understand chemistry
+        and help instructors create high-quality educational materials.
+    </p>
+
+</section>
+
+
+<!-- CONTACT -->
+
+<section id="contact" class="page-section hero">
+
+    <h2>Contact ChemOasis</h2>
+
+    <p>
+        For questions, collaborations, educational partnerships,
+        or inquiries about ChemOasis, please contact:
+    </p>
+
+    <p>
+        <strong>Manoj K. Manna, Ph.D.</strong>
+        <br>
+        Founder, ChemOasis
+    </p>
+
+</section>
+
+
+<!-- FOOTER -->
+
+<footer>
+
+    <p>
+        <strong>Manoj K. Manna, Ph.D.</strong>
+    </p>
+
+    <p>
+        <strong>
+            Founder, ChemOasis
+        </strong>
+    </p>
+
+    <p>
+        <strong>Founded in the United States</strong>
+    </p>
+
+    <p>
+        <strong>
+            Huntington, West Virginia 25755, USA
+        </strong>
+    </p>
+
+</footer>
+
+
+<script>
+
+    const sectionLinks =
+        document.querySelectorAll('nav a[data-section]');
+
+    const sections =
+        document.querySelectorAll('.page-section');
+
+
+    function showSection(sectionId) {
+
+        sections.forEach(section => {
+
+            section.classList.remove('active');
+
+        });
+
+
+        sectionLinks.forEach(link => {
+
+            link.classList.remove('active');
+
+        });
+
+
+        const targetSection =
+            document.getElementById(sectionId);
+
+
+        if (targetSection) {
+
+            targetSection.classList.add('active');
+
         }
-    ]
-    if course_level == "Principles of Chemistry Laboratory"
-    else []
-)
-)
 
-            full_text = response.output_text
-            st.markdown(full_text)
 
-            if mode in [
-                "Generate MCQs",
-                "Create Worksheet",
-                "Practice Problems"
-            ]:
+        const activeLink =
+            document.querySelector(
+                `nav a[data-section="${sectionId}"]`
+            );
 
-                student_text = full_text.split("Answer Key")[0]
 
-                student_pdf = create_pdf(
-                    "ChemOasis Chemistry - Student Version",
-                    student_text
-                )
+        if (activeLink) {
 
-                instructor_pdf = create_pdf(
-                    "ChemOasis Chemistry - Instructor Version",
-                    full_text
-                )
+            activeLink.classList.add('active');
 
-                st.download_button(
-                    "📄 Download Student Version",
-                    data=student_pdf,
-                    file_name="ChemOasis_Student_Version.pdf",
-                    mime="application/pdf"
-                )
+        }
 
-                st.download_button(
-                    "🔑 Download Instructor Version",
-                    data=instructor_pdf,
-                    file_name="ChemOasis_Instructor_Version.pdf",
-                    mime="application/pdf"
-                )
 
-        else:
-            st.warning("Please enter a chemistry topic or question.")
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+
+    }
+
+
+    sectionLinks.forEach(link => {
+
+        link.addEventListener(
+            'click',
+            function(event) {
+
+                event.preventDefault();
+
+
+                const sectionId =
+                    this.getAttribute('data-section');
+
+
+                history.pushState(
+                    null,
+                    '',
+                    '#' + sectionId
+                );
+
+
+                showSection(sectionId);
+
+            }
+        );
+
+    });
+
+
+    function loadStartingSection() {
+
+        const requestedSection =
+            window.location.hash.replace('#', '');
+
+
+        if (
+            requestedSection &&
+            document.getElementById(requestedSection)
+        ) {
+
+            showSection(requestedSection);
+
+        }
+
+        else {
+
+            showSection('home');
+
+            history.replaceState(
+                null,
+                '',
+                '#home'
+            );
+
+        }
+
+    }
+
+
+    window.addEventListener(
+        'popstate',
+        loadStartingSection
+    );
+
+
+    loadStartingSection();
+
+</script>
+
+
+</body>
+</html>
