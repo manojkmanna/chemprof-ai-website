@@ -166,7 +166,7 @@ st.markdown(
     }
 
     .block-container {
-        padding-top: 4.5rem !important;
+        padding-top: 6rem !important;
         padding-bottom: 3rem !important;
     }
 
@@ -581,12 +581,7 @@ if active_professor is None:
     def professor_card(column, title, subject, button_label, button_key, professor_key):
         with column:
             st.markdown(
-                f"""
-                <div class="chemoasis-professor-title">
-                    {droplet_svg}
-                    <span>{title}</span>
-                </div>
-                """,
+                f"""<div class="chemoasis-professor-title">{droplet_svg}<span>{title}</span></div>""",
                 unsafe_allow_html=True
             )
 
