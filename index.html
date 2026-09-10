@@ -53,6 +53,42 @@
             color: #8B1E3F;
         }
 
+        .launch-ticker {
+    position: relative;
+    overflow: hidden;
+    height: 38px;
+    background: #8B1E3F;
+    color: #ffffff;
+    border-bottom: 1px solid #721831;
+}
+
+.launch-ticker__text {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: max-content;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    transform: translate(-100%, -50%);
+    animation: launch-scroll-left-to-right 14s linear infinite;
+}
+
+.launch-ticker:hover .launch-ticker__text {
+    animation-play-state: paused;
+}
+
+@keyframes launch-scroll-left-to-right {
+    from {
+        transform: translate(-100%, -50%);
+    }
+
+    to {
+        transform: translate(100vw, -50%);
+    }
+}
         .page-section {
             display: none;
             min-height: 62vh;
@@ -152,6 +188,33 @@
                 font-size: 38px;
             }
         }
+    @media (max-width: 900px) {
+    .launch-ticker__text {
+        font-size: 14px;
+        animation-duration: 11s;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .launch-ticker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        height: auto;
+        padding: 7px 16px;
+        box-sizing: border-box;
+        text-align: center;
+    }
+
+    .launch-ticker__text {
+        position: static;
+        width: auto;
+        white-space: normal;
+        transform: none;
+        animation: none;
+    }
+}
     </style>
 </head>
 
@@ -185,6 +248,13 @@
     </nav>
 
 </header>
+    <div class="launch-ticker"
+     role="status"
+     aria-label="ChemOasis official launch announcement">
+    <span class="launch-ticker__text">
+        ChemOasis™ Official Launch: October 1, 2026
+    </span>
+</div>
 
 
 <!-- HOME -->
