@@ -162,6 +162,92 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
+        .profile-section {
+            padding: 64px 20px;
+        }
+
+        .profile-card {
+            width: min(100%, 620px);
+            margin: 0 auto;
+            padding: 34px;
+            box-sizing: border-box;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 5px 22px rgba(15, 23, 42, 0.1);
+        }
+
+        .profile-card h2 {
+            margin: 0 0 8px;
+            text-align: center;
+            font-size: 32px;
+        }
+
+        .profile-picture-preview {
+            display: block;
+            width: 132px;
+            height: 132px;
+            margin: 24px auto;
+            border: 4px solid #f1d5df;
+            border-radius: 50%;
+            background: #f7e9ee;
+            object-fit: cover;
+        }
+
+        .profile-field {
+            margin-top: 20px;
+        }
+
+        .profile-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .profile-field input,
+        .profile-field select {
+            width: 100%;
+            min-height: 48px;
+            padding: 10px 12px;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #1f2937;
+            font: inherit;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 26px;
+        }
+
+        .profile-actions button {
+            min-height: 48px;
+            padding: 12px 20px;
+            border: 1px solid #8B1E3F;
+            border-radius: 8px;
+            background: #8B1E3F;
+            color: #ffffff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .profile-actions .secondary-button {
+            background: #ffffff;
+            color: #8B1E3F;
+        }
+
+        #profile-status {
+            min-height: 24px;
+            margin: 16px 0 0;
+            color: #166534;
+            font-weight: 700;
+            text-align: center;
+        }
+
         footer {
             text-align: center;
             padding: 35px;
@@ -216,43 +302,10 @@
     }
 }
 
-        #welcome-screen { position:fixed; inset:0; z-index:2000; background:#ffffff; color:#941651; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px; box-sizing:border-box; text-align:center; font-family:Georgia, 'Times New Roman', serif; }
-        #welcome-screen[hidden] { display:none; }
-        #welcome-screen .welcome-intro { color:#941651; font-size:clamp(24px,4vw,42px); margin:0 0 24px; }
-        #welcome-screen svg { width:clamp(75px,12vw,145px); height:clamp(95px,15vw,180px); }
-        #welcome-screen h1 { font-size:clamp(46px,10vw,120px); margin:16px 0 24px; line-height:1.15; }
-        #welcome-screen sup { font-size:.22em; vertical-align:super; }
-        #welcome-screen .welcome-founder { color:#941651; font-size:clamp(17px,2.7vw,32px); margin:0 0 28px; }
     </style>
 </head>
 
 <body>
-<section id="welcome-screen" aria-label="Welcome to ChemOasis" hidden>
-  <p class="welcome-intro">Welcome to</p>
-  <svg viewBox="0 0 96 96" aria-hidden="true"><path d="M48 10C48 10 23 45.2 23 61 23 74.8 34.2 86 48 86 61.8 86 73 74.8 73 61 73 45.1 48 10 48 10Z" fill="#941651"/></svg>
-  <h1>ChemOasis<sup>™</sup></h1>
-  <p class="welcome-founder">Founded and Created By Manoj K. Manna, Ph.D.</p>
-</section>
-<script>
-(function () {
- const welcome = document.getElementById('welcome-screen');
- // Preserve direct links to other sections and show only once per tab visit.
- let seen = false;
- try { seen = sessionStorage.getItem('chemoasis-welcome') === 'seen'; } catch (_) {}
- if (seen || (location.hash && location.hash !== '#home')) return;
- welcome.hidden = false;
- document.documentElement.style.overflow = 'hidden';
- let timer;
- function finish() {
-   clearTimeout(timer);
-   welcome.hidden = true;
-   document.documentElement.style.overflow = '';
-   try { sessionStorage.setItem('chemoasis-welcome', 'seen'); } catch (_) {}
- }
- document.addEventListener('keydown', function (event) { if (event.key === 'Escape') finish(); });
- timer = setTimeout(finish, 3000);
-})();
-</script>
 
 <header>
 
@@ -271,6 +324,7 @@
         <a href="#home" data-section="home">Home</a>
         <a href="#features" data-section="features">Features</a>
         <a href="#students" data-section="students">Students</a>
+        <a href="#student-profile" data-section="student-profile">Student Profile</a>
         <a href="#instructors" data-section="instructors">Instructors</a>
         <a href="#about" data-section="about">About</a>
         <a href="#contact" data-section="contact">Contact</a>
@@ -388,6 +442,52 @@
        Start Learning
     </a>
 
+</section>
+
+
+<!-- STUDENT PROFILE -->
+
+<section id="student-profile" class="page-section profile-section">
+    <div class="profile-card">
+        <h2>Student Profile</h2>
+
+        <img
+            id="profile-picture-preview"
+            class="profile-picture-preview"
+            alt="Student profile picture preview"
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 132'%3E%3Crect width='132' height='132' fill='%23f7e9ee'/%3E%3Ccircle cx='66' cy='48' r='24' fill='%238B1E3F'/%3E%3Cpath d='M24 122c4-30 21-44 42-44s38 14 42 44' fill='%238B1E3F'/%3E%3C/svg%3E"
+        >
+
+        <form id="student-profile-form">
+            <div class="profile-field">
+                <label for="profile-full-name">Full Name</label>
+                <input id="profile-full-name" name="fullName" type="text" autocomplete="name" required>
+            </div>
+
+            <div class="profile-field">
+                <label for="profile-picture">Profile Picture</label>
+                <input id="profile-picture" name="profilePicture" type="file" accept="image/png,image/jpeg,image/webp">
+            </div>
+
+            <div class="profile-field">
+                <label for="profile-experience">Experience Level</label>
+                <select id="profile-experience" name="experience" required>
+                    <option value="">Select experience level</option>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                    <option value="Instructor">Instructor</option>
+                </select>
+            </div>
+
+            <div class="profile-actions">
+                <button type="submit">Save Profile</button>
+                <button type="button" id="remove-profile-picture" class="secondary-button">Remove Picture</button>
+            </div>
+
+            <p id="profile-status" role="status" aria-live="polite"></p>
+        </form>
+    </div>
 </section>
 
 
@@ -648,6 +748,71 @@
 
 
     loadStartingSection();
+
+    const profileStorageKey = 'chemoasis-student-profile';
+    const defaultProfilePicture = document.getElementById('profile-picture-preview').src;
+    const profileForm = document.getElementById('student-profile-form');
+    const profileName = document.getElementById('profile-full-name');
+    const profilePicture = document.getElementById('profile-picture');
+    const profilePicturePreview = document.getElementById('profile-picture-preview');
+    const profileExperience = document.getElementById('profile-experience');
+    const profileStatus = document.getElementById('profile-status');
+    let savedProfilePicture = '';
+
+    function loadStudentProfile() {
+        try {
+            const profile = JSON.parse(localStorage.getItem(profileStorageKey) || '{}');
+            profileName.value = profile.fullName || '';
+            profileExperience.value = profile.experience || '';
+            savedProfilePicture = profile.picture || '';
+            profilePicturePreview.src = savedProfilePicture || defaultProfilePicture;
+        }
+        catch (_) {
+            profileStatus.textContent = 'The saved profile could not be loaded.';
+        }
+    }
+
+    profilePicture.addEventListener('change', function () {
+        const file = this.files && this.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/') || file.size > 2 * 1024 * 1024) {
+            this.value = '';
+            profileStatus.textContent = 'Choose a PNG, JPEG, or WebP image smaller than 2 MB.';
+            return;
+        }
+        const reader = new FileReader();
+        reader.addEventListener('load', function () {
+            savedProfilePicture = reader.result;
+            profilePicturePreview.src = savedProfilePicture;
+            profileStatus.textContent = '';
+        });
+        reader.readAsDataURL(file);
+    });
+
+    document.getElementById('remove-profile-picture').addEventListener('click', function () {
+        savedProfilePicture = '';
+        profilePicture.value = '';
+        profilePicturePreview.src = defaultProfilePicture;
+        profileStatus.textContent = 'Profile picture removed. Select Save Profile to keep this change.';
+    });
+
+    profileForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        const profile = {
+            fullName: profileName.value.trim(),
+            experience: profileExperience.value,
+            picture: savedProfilePicture
+        };
+        try {
+            localStorage.setItem(profileStorageKey, JSON.stringify(profile));
+            profileStatus.textContent = 'Student profile saved.';
+        }
+        catch (_) {
+            profileStatus.textContent = 'This browser could not save the profile picture. Try a smaller image.';
+        }
+    });
+
+    loadStudentProfile();
 
 </script>
 
