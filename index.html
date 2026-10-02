@@ -57,9 +57,12 @@
     position: relative;
     overflow: hidden;
     height: 38px;
-    background: #8B1E3F;
+    background: linear-gradient(110deg, #721831 0%, #8B1E3F 35%, #ad355a 50%, #8B1E3F 65%, #721831 100%);
+    background-size: 250% 100%;
+    animation: launch-shimmer 8s ease-in-out infinite;
     color: #ffffff;
     border-bottom: 1px solid #721831;
+    box-shadow: 0 3px 14px rgba(139, 30, 63, 0.22);
 }
 
 .launch-ticker__text {
@@ -72,10 +75,30 @@
     font-weight: 700;
     letter-spacing: 0.02em;
     white-space: nowrap;
+    text-decoration: none;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
     transform: translate(-100%, -50%);
     animation: launch-scroll-left-to-right 14s linear infinite;
 }
 
+.launch-ticker__text::before {
+    content: "✦";
+    color: #ffe0aa;
+    margin-right: 12px;
+    text-shadow: 0 0 9px rgba(255, 224, 170, 0.7);
+}
+
+.launch-ticker:hover,
+.launch-ticker:focus-within {
+    animation-play-state: paused;
+}
+
+@keyframes launch-shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.launch-ticker:focus-within .launch-ticker__text,
 .launch-ticker:hover .launch-ticker__text {
     animation-play-state: paused;
 }
@@ -228,6 +251,7 @@
         padding: 7px 16px;
         box-sizing: border-box;
         text-align: center;
+        animation: none;
     }
 
     .launch-ticker__text {
@@ -275,10 +299,12 @@
 </header>
     <div class="launch-ticker" id="launch-announcement"
      role="status"
-     aria-label="ChemOasis official launch announcement">
-    <span class="launch-ticker__text">
-        ChemOasis™ Official Launch: October 1, 2026
-    </span>
+     aria-label="ChemOasis App Store launch announcement">
+    <a class="launch-ticker__text"
+       href="https://apps.apple.com/us/app/chemoasis/id6809320316"
+       target="_blank" rel="noopener noreferrer">
+        ChemOasis™ successfully launched on October 1, 2026 • Now available on the Apple App Store
+    </a>
 </div>
 
 
@@ -666,11 +692,6 @@
 
     loadStartingSection();
 
-    const launchAnnouncement = document.getElementById('launch-announcement');
-    const launchAnnouncementEnds = new Date('2026-10-02T00:00:00-04:00');
-    if (launchAnnouncement && new Date() >= launchAnnouncementEnds) {
-        launchAnnouncement.remove();
-    }
 
 </script>
 
