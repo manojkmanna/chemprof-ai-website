@@ -265,9 +265,7 @@
 }
 
     </style>
-<style>
-header{gap:24px}.logo{white-space:nowrap;flex-shrink:0}header nav{justify-content:flex-end;gap:14px 20px}header nav a{white-space:nowrap}.header-app-store{flex:none;line-height:0}.header-app-store img{display:block;width:120px;height:40px}.header-app-store:focus-visible{outline:3px solid #8b1e3f;outline-offset:4px}@media(max-width:900px){header{flex-wrap:wrap}.header-app-store{align-self:center}header nav{justify-content:center}}
-</style>
+<style>.static-app-store-bar{display:flex;justify-content:flex-end;align-items:center;min-height:64px;background:#8b1e3f;padding:0 16px}.static-app-store-bar a{line-height:0}.static-app-store-bar img{display:block;width:120px;height:40px}.static-app-store-bar a:focus-visible{outline:3px solid white;outline-offset:4px}</style>
 </head>
 
 <body>
@@ -300,8 +298,9 @@ header{gap:24px}.logo{white-space:nowrap;flex-shrink:0}header nav{justify-conten
            Sign In
         </a>
     </nav>
-    <a class="header-app-store" href="https://apps.apple.com/us/app/chemoasis/id6809320316" target="_blank" rel="noopener noreferrer" aria-label="Download ChemOasis on the App Store"><img src="assets/download-on-the-app-store.svg" alt="Download on the App Store" width="120" height="40"></a>
+
 </header>
+<div class="static-app-store-bar" aria-label="ChemOasis on the Apple App Store"><a href="https://apps.apple.com/us/app/chemoasis/id6809320316" target="_blank" rel="noopener noreferrer" aria-label="Download ChemOasis on the App Store"><img src="assets/download-on-the-app-store.svg" alt="Download on the App Store" width="120" height="40"></a></div>
     <!-- HOME -->
 
 <section id="home" class="page-section hero active">
