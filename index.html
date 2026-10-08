@@ -220,10 +220,6 @@ nav a:focus-visible{outline:3px solid #e7bd75;outline-offset:4px}
 @media(max-width:1000px){header{flex-direction:column;align-items:flex-start;gap:15px}nav{justify-content:flex-start;gap:9px 18px}}
 @media(max-width:600px){header{position:relative;padding:18px 6%}.logo{font-size:24px}nav a{font-size:13px}}
 </style>
-<link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
-<link rel="stylesheet" href="assets/map-home.css">
-<script defer src="assets/vendor/leaflet/leaflet.js"></script>
-<script defer src="assets/home-map.js"></script>
 </head>
 
 <body>
@@ -260,16 +256,36 @@ nav a:focus-visible{outline:3px solid #e7bd75;outline-offset:4px}
 </header>
     <!-- HOME -->
 
-<section id="home" class="page-section active map-home">
-<div id="institution-map" role="region" aria-label="Interactive institution map"></div>
-<aside class="map-tools" aria-label="Find institutions">
-<form id="institution-search" role="search"><label for="map-search">Find your institution</label><div class="map-search"><input id="map-search" type="search" placeholder="Institution or city…" autocomplete="off"><button type="submit">Search</button></div></form>
-<details class="map-filter-panel"><summary>Filter by location</summary><div class="map-filters"><label>Country / territory<select id="map-country"><option value="">All listed locations</option></select></label><label>Region / state<select id="map-region"><option value="">All regions</option></select></label><label>City<select id="map-city"><option value="">All cities</option></select></label></div><button id="map-reset" type="button">Reset filters</button></details>
-<p id="map-status" role="status">Loading institution directory…</p>
-<details class="map-result-panel"><summary>Browse matching institutions</summary><p id="results-note"></p><div id="map-results"></div><button id="map-more" type="button" hidden>Show more institutions</button></details>
-</aside>
-<details class="map-credits"><summary>Map credits</summary><p>City coordinates: <a href="https://www.geonames.org/">GeoNames</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>. Locations are city-level approximations.</p></details>
-<div hidden><span id="home-institution-count"></span><span id="home-country-count"></span><span id="home-course-count"></span></div>
+<section id="home" class="page-section hero active">
+
+    <h1>Where Chemistry Becomes Easier to Learn</h1>
+
+    <h2>Your Personal Chemistry Learning Companion</h2>
+
+<p>ChemOasis™ is a privately owned innovation developed independently of any academic or institutional affiliation.</p>
+    <p>
+        ChemOasis™ helps students understand chemistry through clear explanations,
+        guided practice, quizzes, worksheets, exam preparation, and adaptive
+        learning resources. It also helps instructors create high-quality chemistry
+        teaching materials efficiently.
+    </p>
+
+    <a class="button"
+   href="https://app.chemoasis.app"
+   target="_blank">
+  Launch ChemOasis
+</a>
+
+    <a class="button" href="https://app.chemoasis.app/?page=courses">
+        ChemOasis™ Courses
+    </a>
+    <p>Find your university and course, then choose original ChemOasis teaching in any subject. Browse the directory before signing in.</p>
+
+    <p class="access-note">
+        Complimentary limited access is currently available to eligible verified
+        U.S. academic users. Usage allowances and service availability apply.
+    </p>
+
 </section>
 
 
