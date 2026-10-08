@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>ChemOasis™ | Chemistry Learning and Teaching</title>
+    <title>ChemOasis™ | Learning, Teaching and Research</title>
 
     <meta name="description"
           content="ChemOasis™ is an independent chemistry learning and teaching platform for students and instructors.">
@@ -265,6 +265,10 @@
 }
 
     </style>
+<link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="assets/home-map.css">
+<script defer src="assets/vendor/leaflet/leaflet.js"></script>
+<script defer src="assets/home-map.js"></script>
 </head>
 
 <body>
@@ -284,7 +288,8 @@
 
     <nav>
         <a href="#home" data-section="home">Home</a>
-        <a href="#features" data-section="features">Features</a>
+        <a href="#features" data-section="features">Learning Center</a>
+        <a href="#research" data-section="research">Research</a>
         <a href="https://app.chemoasis.app/?page=courses">ChemOasis™ Courses</a>
         <a href="#students" data-section="students">Students</a>
         <a href="#instructors" data-section="instructors">Instructors</a>
@@ -318,39 +323,44 @@
 
 <!-- HOME -->
 
-<section id="home" class="page-section hero active">
-
-    <h1>Where Chemistry Becomes Easier to Learn</h1>
-
-    <h2>Your Personal Chemistry Learning Companion</h2>
-
-<p>ChemOasis™ is a privately owned innovation developed independently of any academic or institutional affiliation.</p>
-    <p>
-        ChemOasis™ helps students understand chemistry through clear explanations,
-        guided practice, quizzes, worksheets, exam preparation, and adaptive
-        learning resources. It also helps instructors create high-quality chemistry
-        teaching materials efficiently.
-    </p>
-
-    <a class="button"
-   href="https://app.chemoasis.app"
-   target="_blank">
-  Launch ChemOasis
-</a>
-
-    <a class="button" href="https://app.chemoasis.app/?page=courses">
-        ChemOasis™ Courses
-    </a>
-    <p>Find your university and course, then choose original ChemOasis teaching in any subject. Browse the directory before signing in.</p>
-
-    <p class="access-note">
-        Complimentary limited access is currently available to eligible verified
-        U.S. academic users. Usage allowances and service availability apply.
-    </p>
-
+<section id="home" class="page-section active home-directory">
+  <div class="home-banner">
+    <div class="home-banner-inner">
+      <p class="home-eyebrow">ChemOasis™ · Learning, Teaching &amp; Research</p>
+      <h1>A place to learn.<br>A space to discover.</h1>
+      <p>Explore institutions and courses, then learn with clear explanations, guided practice, worksheets, and ChemOasis exams.</p>
+      <form id="institution-search" role="search">
+        <label for="map-search">Find an institution or city</label>
+        <div class="home-search"><input id="map-search" type="search" placeholder="University, institution, or city…" autocomplete="off"><button type="submit">Search</button></div>
+      </form>
+      <div class="home-actions"><a href="https://app.chemoasis.app/?page=courses">Browse ChemOasis™ Courses</a><a href="https://app.chemoasis.app/?page=mcat">ChemOasis™ MCAT</a><a href="https://app.chemoasis.app/">Start learning</a></div>
+    </div>
+  </div>
+  <div class="home-directory-inner">
+    <div class="home-pathways" aria-label="Learning and research pathways">
+      <a href="https://app.chemoasis.app/?page=courses"><span>LEARNING</span><h2>Find your course</h2><p>Explore university courses and choose your ChemOasis learning format.</p><strong>Explore courses →</strong></a>
+      <a href="https://app.chemoasis.app/?page=mcat"><span>EXAM PREPARATION</span><h2>Practice with purpose</h2><p>Build knowledge with timed MCAT practice and explanations after completion.</p><strong>Open MCAT preparation →</strong></a>
+      <a href="#research" data-section="research"><span>RESEARCH</span><h2>Support your discovery</h2><p>Learn about ChemOasis researcher profiles and private research notes.</p><strong>Explore research →</strong></a>
+    </div>
+    <div class="home-stats" aria-label="Directory coverage"><div><span>Institutions listed</span><strong id="home-institution-count">—</strong></div><div><span>Countries &amp; territories listed</span><strong id="home-country-count">—</strong></div><div><span>Catalog courses indexed</span><strong id="home-course-count">—</strong></div></div>
+    <div class="home-map-heading"><div><h2>Find your place to learn</h2><p>Choose a location or search an institution to explore its courses.</p></div><button id="map-reset" type="button">Reset filters</button></div>
+    <div class="home-filters"><label>Country / territory<select id="map-country"><option value="">All listed locations</option></select></label><label>Region / state<select id="map-region"><option value="">All regions</option></select></label><label>City<select id="map-city"><option value="">All cities</option></select></label></div>
+    <p id="map-status" role="status">Loading the institution directory…</p>
+    <div id="institution-map" role="region" aria-label="Interactive institution map"></div>
+    <details class="map-credits"><summary>Map credits</summary><p>City coordinates: <a href="https://www.geonames.org/">GeoNames</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>. Locations are city-level approximations.</p></details>
+    <div class="home-results-heading"><h3>Institutions</h3><p id="results-note"></p></div><div id="map-results" class="home-results"></div><button id="map-more" type="button" hidden>Show more institutions</button>
+    <p class="home-independent">ChemOasis™ is privately owned and independently developed. Institution listings do not imply endorsement or affiliation.</p>
+  </div>
 </section>
 
 
+<section id="research" class="page-section hero">
+<h1>ChemOasis™ Research</h1><h2>A dedicated space for research work</h2>
+<p>Access researcher profiles and private research notes through ChemOasis. Keep your research work alongside your learning and teaching tools.</p>
+<a class="button" href="https://app.chemoasis.app/">Sign in to ChemOasis</a>
+<p>After signing in, choose ChemOasis Research on the dashboard when it is available to your account.</p>
+<p class="access-note">ChemOasis™ is independently developed. Research tools support your work; scientific conclusions require evaluation of evidence and original sources.</p>
+</section>
 <!-- FEATURES -->
 
 <section id="features" class="page-section features">
@@ -585,7 +595,7 @@
 <script>
 
     const sectionLinks =
-        document.querySelectorAll('nav a[data-section]');
+        document.querySelectorAll('a[data-section]');
 
     const sections =
         document.querySelectorAll('.page-section');
